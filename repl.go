@@ -5,11 +5,8 @@ import (
 )
 
 func cleanInput(text string) []string {
-	words := strings.Fields(text)
-
-	for i, word := range words {
-		words[i] = strings.ToLower(word)
-	}
+	loweredInput := strings.ToLower(text)
+	words := strings.Fields(loweredInput)
 
 	return words
 }
