@@ -10,8 +10,17 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func() error
+	callback    func(*Config) error
 }
+
+// Config holds runtime configuration passed to command callbacks.
+type Config struct {
+	Next string
+	Prev string
+}
+
+// package-level config instance (can be populated in init or at runtime)
+var config Config
 
 var commands map[string]cliCommand
 
@@ -26,7 +35,7 @@ func startRepl() {
 
 		command, ok := commands[words[0]]
 		if ok {
-			err := command.callback()
+			err := command.callback(&config)
 			if err != nil {
 				fmt.Printf("Error thrown: %v", err)
 			}
@@ -57,9 +66,14 @@ func init() {
 			callback:    commandHelp,
 		},
 		"map": {
-			name:        "exit",
+			name:        "map",
 			description: "Displays the list of locations",
 			callback:    commandMap,
+		},
+		"mapb": {
+			name:        "mapb",
+			description: "Displays the list of previous locations",
+			callback:    commandMapb,
 		},
 	}
 }

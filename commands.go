@@ -1,19 +1,31 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 )
 
-func commandExit() error {
+type Location struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+type PokeApiResponse struct {
+	Count    int        `json:"count"`
+	Next     string     `json:"next"`
+	Previous string     `json:"previous"`
+	Results  []Location `json:"results"`
+}
+
+func commandExit(config *Config) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp() error {
+func commandHelp(config *Config) error {
 	fmt.Print("Welcome to the Pokedex!\nUsage:\n\n")
 
 	for _, command := range commands {
@@ -22,10 +34,12 @@ func commandHelp() error {
 	return nil
 }
 
-func commandMap() error {
+func commandMap(config *Config) error {
 	url := "https://pokeapi.co/api/v2/location/"
-	// type location struct {
-	// }
+
+	if config != nil && config.Next != "" {
+		url = config.Next
+	}
 
 	res, err := http.Get(url)
 	if err != nil {
@@ -33,11 +47,57 @@ func commandMap() error {
 	}
 	defer res.Body.Close()
 
-	body, err := io.ReadAll(res.Body)
-	bodyString := string(body)
+	// body, err := io.ReadAll(res.Body)
+	// bodyString := string(body)
+	// if bodyString == "" {
+	// 	return nil
+	// }
 
-	if bodyString == "" {
+	var pokeApiStruct PokeApiResponse
+
+	decoder := json.NewDecoder(res.Body)
+	err = decoder.Decode(&pokeApiStruct)
+	if err != nil {
+		return err
+	}
+
+	for _, location := range pokeApiStruct.Results {
+		fmt.Println(location.Name + "-area")
+	}
+
+	config.Next = pokeApiStruct.Next
+	config.Prev = pokeApiStruct.Previous
+	return nil
+}
+
+func commandMapb(config *Config) error {
+	var url string
+	if config != nil && config.Prev != "" {
+		url = config.Prev
+	} else {
+		fmt.Println("Mapb is impossible, no previous locations available")
 		return nil
 	}
+
+	var pokeApiStruct PokeApiResponse
+
+	res, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer res.Body.Close()
+
+	err = json.NewDecoder(res.Body).Decode(&pokeApiStruct)
+	if err != nil {
+		return err
+	}
+
+	for _, location := range pokeApiStruct.Results {
+		fmt.Println(location.Name + "-area")
+	}
+
+	config.Next = pokeApiStruct.Next
+	config.Prev = pokeApiStruct.Previous
 	return nil
 }
