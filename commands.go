@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 )
@@ -41,11 +43,19 @@ func commandMap(config *Config) error {
 		url = config.Next
 	}
 
-	res, err := http.Get(url)
-	if err != nil {
-		return err
+	res, ok := cache.Get(url)
+	if !ok {
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		res, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		cache.Add(url, res)
 	}
-	defer res.Body.Close()
 
 	// body, err := io.ReadAll(res.Body)
 	// bodyString := string(body)
@@ -55,8 +65,8 @@ func commandMap(config *Config) error {
 
 	var pokeApiStruct PokeApiResponse
 
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(&pokeApiStruct)
+	decoder := json.NewDecoder(bytes.NewReader(res))
+	err := decoder.Decode(&pokeApiStruct)
 	if err != nil {
 		return err
 	}
@@ -79,16 +89,24 @@ func commandMapb(config *Config) error {
 		return nil
 	}
 
-	var pokeApiStruct PokeApiResponse
+	res, ok := cache.Get(url)
+	if !ok {
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		res, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
 
-	res, err := http.Get(url)
-	if err != nil {
-		return err
+		cache.Add(url, res)
 	}
 
-	defer res.Body.Close()
+	var pokeApiStruct PokeApiResponse
 
-	err = json.NewDecoder(res.Body).Decode(&pokeApiStruct)
+	err := json.NewDecoder(bytes.NewReader(res)).Decode(&pokeApiStruct)
 	if err != nil {
 		return err
 	}

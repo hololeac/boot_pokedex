@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
+
+	"github.com/hololeac/boot_pokedex/internal/pokecache"
 )
 
 type cliCommand struct {
@@ -23,6 +26,8 @@ type Config struct {
 var config Config
 
 var commands map[string]cliCommand
+
+var cache *pokecache.Cache
 
 func startRepl() {
 	scanner := bufio.NewScanner(os.Stdin)
@@ -54,6 +59,7 @@ func cleanInput(text string) []string {
 }
 
 func init() {
+	cache = pokecache.NewCache(5 * time.Second)
 	commands = map[string]cliCommand{
 		"exit": {
 			name:        "exit",
