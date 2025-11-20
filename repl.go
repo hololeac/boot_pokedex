@@ -13,7 +13,7 @@ import (
 type cliCommand struct {
 	name        string
 	description string
-	callback    func(*Config) error
+	callback    func(*Config, string) error
 }
 
 // Config holds runtime configuration passed to command callbacks.
@@ -39,8 +39,9 @@ func startRepl() {
 		words := cleanInput(scanner.Text())
 
 		command, ok := commands[words[0]]
+		words = append(words, "")
 		if ok {
-			err := command.callback(&config)
+			err := command.callback(&config, words[1])
 			if err != nil {
 				fmt.Printf("Error thrown: %v", err)
 			}
@@ -80,6 +81,11 @@ func init() {
 			name:        "mapb",
 			description: "Displays the list of previous locations",
 			callback:    commandMapb,
+		},
+		"explore": {
+			name:        "explore",
+			description: "Displays info about location",
+			callback:    commandExplore,
 		},
 	}
 }

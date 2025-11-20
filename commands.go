@@ -21,13 +21,21 @@ type PokeApiResponse struct {
 	Results  []Location `json:"results"`
 }
 
-func commandExit(config *Config) error {
+type PokemonsStruct struct {
+	PokemonEncounters []struct {
+		Pokemon struct {
+			Name string `json:"name"`
+		} `json:"pokemon"`
+	} `json:"pokemon_encounters"`
+}
+
+func commandExit(config *Config, param string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(config *Config) error {
+func commandHelp(config *Config, param string) error {
 	fmt.Print("Welcome to the Pokedex!\nUsage:\n\n")
 
 	for _, command := range commands {
@@ -36,8 +44,8 @@ func commandHelp(config *Config) error {
 	return nil
 }
 
-func commandMap(config *Config) error {
-	url := "https://pokeapi.co/api/v2/location/"
+func commandMap(config *Config, param string) error {
+	url := "https://pokeapi.co/api/v2/location-area/"
 
 	if config != nil && config.Next != "" {
 		url = config.Next
@@ -72,7 +80,7 @@ func commandMap(config *Config) error {
 	}
 
 	for _, location := range pokeApiStruct.Results {
-		fmt.Println(location.Name + "-area")
+		fmt.Println(location.Name)
 	}
 
 	config.Next = pokeApiStruct.Next
@@ -80,7 +88,7 @@ func commandMap(config *Config) error {
 	return nil
 }
 
-func commandMapb(config *Config) error {
+func commandMapb(config *Config, param string) error {
 	var url string
 	if config != nil && config.Prev != "" {
 		url = config.Prev
@@ -112,10 +120,47 @@ func commandMapb(config *Config) error {
 	}
 
 	for _, location := range pokeApiStruct.Results {
-		fmt.Println(location.Name + "-area")
+		fmt.Println(location.Name)
 	}
 
 	config.Next = pokeApiStruct.Next
 	config.Prev = pokeApiStruct.Previous
+	return nil
+}
+
+func commandExplore(config *Config, param string) error {
+	url := "https://pokeapi.co/api/v2/location-area/" + param
+
+	res, ok := cache.Get(url)
+	if !ok {
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		res, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		cache.Add(url, res)
+	}
+
+	var pokemons PokemonsStruct
+	err := json.NewDecoder(bytes.NewReader(res)).Decode(&pokemons)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Exploring" + param + "...")
+
+	if len(pokemons.PokemonEncounters) == 0 {
+		fmt.Println("Pokemons not found!")
+	} else {
+		fmt.Println("Found Pokemon:")
+		for _, pokemon := range pokemons.PokemonEncounters {
+			fmt.Println(" - " + pokemon.Pokemon.Name)
+		}
+	}
 	return nil
 }
