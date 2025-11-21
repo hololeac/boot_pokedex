@@ -65,12 +65,6 @@ func commandMap(config *Config, param string) error {
 		cache.Add(url, res)
 	}
 
-	// body, err := io.ReadAll(res.Body)
-	// bodyString := string(body)
-	// if bodyString == "" {
-	// 	return nil
-	// }
-
 	var pokeApiStruct PokeApiResponse
 
 	decoder := json.NewDecoder(bytes.NewReader(res))
