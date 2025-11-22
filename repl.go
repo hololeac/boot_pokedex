@@ -87,5 +87,10 @@ func init() {
 			description: "Displays info about location",
 			callback:    commandExplore,
 		},
+		"catch": {
+			name:        "catch",
+			description: "Catches pokemon",
+			callback:    commandCatch,
+		},
 	}
 }

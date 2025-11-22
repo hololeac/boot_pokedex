@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"os"
 )
@@ -155,6 +156,50 @@ func commandExplore(config *Config, param string) error {
 		for _, pokemon := range pokemons.PokemonEncounters {
 			fmt.Println(" - " + pokemon.Pokemon.Name)
 		}
+	}
+	return nil
+}
+
+func commandCatch(config *Config, param string) error {
+	type pokemonStruct struct {
+		BaseExperience int `json:"base_experience"`
+	}
+
+	var pokemonExp pokemonStruct
+	if len(param) == 0 {
+		return fmt.Errorf("provide pokemon name")
+	}
+
+	fmt.Printf("Throwing a Pokeball at %v...\n", param)
+
+	url := "https://pokeapi.co/api/v2/pokemon/" + param
+
+	res, ok := cache.Get(url)
+	if !ok {
+		resp, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+		res, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		cache.Add(url, res)
+	}
+
+	err := json.NewDecoder(bytes.NewReader(res)).Decode(&pokemonExp)
+	if err != nil {
+		return err
+	}
+
+	randomNumber := rand.IntN(150)
+	if randomNumber < pokemonExp.BaseExperience {
+		fmt.Printf("%v was caught!\n", param)
+		// add pokemon to pokedex
+	} else {
+		fmt.Printf("%v escaped!\n", param)
 	}
 	return nil
 }
