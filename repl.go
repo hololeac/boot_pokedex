@@ -27,8 +27,6 @@ var config Config
 
 var commands map[string]cliCommand
 
-var cache *pokecache.Cache
-
 func startRepl() {
 	scanner := bufio.NewScanner(os.Stdin)
 
